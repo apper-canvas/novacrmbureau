@@ -86,9 +86,9 @@
     @apply opacity-100 scale-y-100;
   }
   
-  /* Stat Card Styles */
+/* Stat Card Styles */
   .nova-stat-card {
-    @apply nova-card p-6 hover:scale-102 hover:-translate-y-1 transition-all duration-300 cursor-pointer group;
+    @apply nova-card p-6 hover:scale-102 hover:-translate-y-1 transition-all duration-300 cursor-pointer;
   }
   
   .nova-stat-card::after {
