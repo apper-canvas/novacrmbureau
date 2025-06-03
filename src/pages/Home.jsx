@@ -218,12 +218,12 @@ const Home = () => {
       <div className="flex">
         {/* Sidebar */}
         <motion.aside 
-          initial={{ x: -20, opacity: 0 }}
+initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white shadow-card border-r border-surface-100 transition-transform duration-300 ease-in-out`}
+          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white/95 backdrop-blur-md shadow-glass border-r border-surface-100/50 transition-transform duration-300 ease-in-out`}
         >
           <div className="p-6 pt-20 lg:pt-6">
             <nav className="space-y-2">

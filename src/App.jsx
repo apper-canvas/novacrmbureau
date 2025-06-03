@@ -6,7 +6,7 @@ import NotFound from './pages/NotFound'
 
 function App() {
   return (
-    <div className="min-h-screen bg-nova-gray">
+<div className="min-h-screen bg-gradient-to-br from-surface-50 via-white to-surface-100">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="*" element={<NotFound />} />
@@ -16,7 +16,7 @@ function App() {
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
-        newestOnTop={false}
+        newestOnTop={true}
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
@@ -24,7 +24,8 @@ function App() {
         pauseOnHover
         theme="light"
         className="mt-16"
-        toastClassName="rounded-xl shadow-card"
+        toastClassName="relative overflow-hidden rounded-xl shadow-elevated backdrop-blur-sm bg-white/90 border border-white/20"
+        progressClassName="bg-gradient-to-r from-primary to-secondary"
       />
     </div>
   )

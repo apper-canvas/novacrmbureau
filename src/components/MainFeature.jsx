@@ -451,17 +451,32 @@ const MainFeature = ({ activeSection }) => {
           className="nova-card p-6"
         >
           <h3 className="text-lg font-semibold text-nova-text mb-4">Upcoming Tasks</h3>
-          <div className="space-y-4">
-            {tasks.todo.slice(0, 3).map((task) => (
-              <div key={task.id} className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-nova-text">{task.title}</p>
-                  <p className="text-xs text-surface-500">Due: {task.dueDate}</p>
+<div className="space-y-4">
+            {tasks.todo.slice(0, 3).map((task, index) => (
+              <motion.div 
+                key={task.id} 
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-surface-50 transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-150 transition-transform"></div>
+                  <div>
+                    <p className="text-sm font-medium text-nova-text">{task.title}</p>
+                    <p className="text-xs text-surface-500">Due: {task.dueDate}</p>
+                  </div>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(task.priority)}`}>
+                <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                  task.priority === 'high' 
+                    ? 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border border-red-200' 
+                    : task.priority === 'medium'
+                    ? 'bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 border border-yellow-200'
+                    : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200'
+                }`}>
                   {task.priority}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
