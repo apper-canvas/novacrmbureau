@@ -3,10 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  
   body {
     @apply bg-gradient-to-br from-surface-50 via-white to-surface-100 text-nova-text antialiased;
     font-family: 'Inter', sans-serif;
