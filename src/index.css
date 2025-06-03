@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-nova-gray text-nova-text;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .nova-card {
+    @apply bg-white rounded-xl shadow-card hover:shadow-nova-hover transition-all duration-300;
+  }
+  
+  .nova-button {
+    @apply bg-nova-gradient text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-nova-hover;
+  }
+  
+  .nova-input {
+    @apply w-full px-4 py-3 rounded-xl border border-surface-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300;
+  }
+  
+  .nova-sidebar-item {
+    @apply flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-surface-100 cursor-pointer;
+  }
+  
+  .nova-sidebar-item.active {
+    @apply bg-nova-gradient text-white shadow-nova;
+  }
+  
+  .nova-stat-card {
+    @apply nova-card p-6 hover:scale-105 transition-all duration-300 cursor-pointer;
+  }
+  
+  .nova-kanban-column {
+    @apply bg-surface-50 rounded-xl p-4 min-h-96;
+  }
+  
+  .nova-kanban-card {
+    @apply nova-card p-4 mb-3 cursor-pointer hover:scale-102 transition-all duration-300;
+  }
+  
+  .nova-activity-item {
+    @apply flex items-start space-x-3 p-4 hover:bg-surface-50 rounded-xl transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(91, 157, 249, 0.3);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #5B9DF9, #A18CD1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #4088F5, #8B73C6);
+}
+
+/* Responsive design helpers */
+@media (max-width: 768px) {
+  .nova-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .nova-sidebar.open {
+    transform: translateX(0);
+  }
+}
