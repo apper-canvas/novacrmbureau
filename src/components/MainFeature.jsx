@@ -75,19 +75,18 @@ const MainFeature = ({ activeSection }) => {
 
   // Settings state - Fixed form handling
   const [settingsLoading, setSettingsLoading] = useState(false)
-  const [settingsData, setSettingsData] = useState({
+const [settingsData, setSettingsData] = useState({
     profile: { name: 'Alex Chen', email: 'alex@company.com', phone: '+1 (555) 123-4567', company: 'Nova Corp' },
     notifications: { email: true, push: true, sms: false, marketing: true },
     privacy: { profileVisibility: 'team', dataSharing: false, analytics: true },
-    preferences: { language: 'en', timezone: 'UTC-8', dateFormat: 'MM/DD/YYYY', currency: 'USD' }
+    preferences: { language: 'en', timezone: 'UTC-8', currency: 'USD' }
   })
   const [settingsChanged, setSettingsChanged] = useState(false)
-const [settingsChanged, setSettingsChanged] = useState(false)
 
   // Additional state for forms and functionality
   const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
   const [newDeal, setNewDeal] = useState({ title: '', value: '', contact: '', stage: 'qualified' })
-  
+  const [searchTerm, setSearchTerm] = useState('')
   // Companies state
   const [companies, setCompanies] = useState([
     { id: 1, name: 'Tech Corp', industry: 'Technology', employees: 500, revenue: 50000000, location: 'San Francisco, CA', status: 'Active', contact: 'Sarah Wilson', email: 'sarah@techcorp.com', phone: '+1 (555) 123-4567', website: 'https://techcorp.com', founded: 2010, description: 'Leading technology solutions provider' },
@@ -593,9 +592,9 @@ const filteredContacts = contacts.filter(contact =>
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="nova-card p-6"
-        >
+>
           <h3 className="text-lg font-semibold text-nova-text mb-4">Upcoming Tasks</h3>
-<div className="space-y-4">
+          <div className="space-y-4">
             {tasks.todo.slice(0, 3).map((task, index) => (
               <motion.div 
                 key={task.id} 
@@ -784,8 +783,6 @@ value={dealForm.stage}
           </form>
         </div>
 
-        {/* Deals List */}
-        <div className="lg:col-span-2">
 {/* Deals List */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-1 gap-4">
@@ -811,13 +808,16 @@ value={dealForm.stage}
                     <span className="text-sm text-surface-600">{deal.probability}%</span>
                   </div>
                 </div>
-              </motion.div>
+</motion.div>
             ))}
           </div>
         </div>
       </div>
     </div>
   )
+
+  const renderCompanies = () => (
+    <div className="space-y-6">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1460,14 +1460,12 @@ value={dealForm.stage}
                 </button>
               </div>
             </motion.div>
+</motion.div>
           </div>
         )}
       </div>
-    )
-  }
-
-
-  const renderTasks = () => {
+    </div>
+  )
     const allTasks = [...tasks.todo, ...tasks.inprogress, ...tasks.done]
     
     return (
