@@ -1457,15 +1457,16 @@ value={dealForm.stage}
                   className="nova-button-secondary"
                 >
                   Close
-                </button>
+</button>
               </div>
             </motion.div>
-</motion.div>
           </div>
         )}
       </div>
     </div>
-  )
+)
+
+  const renderTasks = () => {
     const allTasks = [...tasks.todo, ...tasks.inprogress, ...tasks.done]
     
     return (
@@ -1498,7 +1499,6 @@ value={dealForm.stage}
       </div>
     )
   }
-
   const renderCalendar = () => {
     return (
       <motion.div
