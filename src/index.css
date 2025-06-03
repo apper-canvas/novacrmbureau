@@ -65,11 +65,10 @@
     @apply w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:bg-white/20 outline-none transition-all duration-300 placeholder:text-surface-300;
   }
   
-  /* Sidebar Styles */
+/* sidebar styles */
   .nova-sidebar-item {
-    @apply relative flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-surface-100/50 cursor-pointer group;
+    @apply relative flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-surface-100/50 cursor-pointer;
   }
-  
   .nova-sidebar-item::before {
     content: '';
     @apply absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full opacity-0 scale-y-0 transition-all duration-300;
