@@ -457,15 +457,15 @@ const [newContact, setNewContact] = useState({ name: '', email: '', company: '',
                 'bg-surface-100 text-surface-800'
               }`}>
                 {task.status}
+{task.status}
               </span>
-<ApperIcon name="Clock" className="w-4 h-4 text-surface-400" />
-              </div>
+              <ApperIcon name="Clock" className="w-4 h-4 text-surface-400" />
             </div>
           </motion.div>
         ))}
       </div>
     </div>
-
+  )
   const renderCalendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState(new Date())
