@@ -48,6 +48,9 @@ const MainFeature = ({ activeSection }) => {
     ]
   })
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium', assignee: '', dueDate: '' })
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [draggedTask, setDraggedTask] = useState(null)
 
   // Calendar state - Fixed initialization and event handling
   const [calendarCurrentDate, setCalendarCurrentDate] = useState(new Date())
@@ -79,9 +82,11 @@ const MainFeature = ({ activeSection }) => {
     preferences: { language: 'en', timezone: 'UTC-8', dateFormat: 'MM/DD/YYYY', currency: 'USD' }
   })
   const [settingsChanged, setSettingsChanged] = useState(false)
-const [showTaskModal, setShowTaskModal] = useState(false)
-  const [editingTask, setEditingTask] = useState(null)
-  const [draggedTask, setDraggedTask] = useState(null)
+
+  // Additional state for forms and functionality
+  const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
+  const [newDeal, setNewDeal] = useState({ title: '', value: '', contact: '', stage: 'qualified' })
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Helper functions
   const formatCurrency = (amount) => {
@@ -96,7 +101,7 @@ const [showTaskModal, setShowTaskModal] = useState(false)
     return new Intl.NumberFormat('en-US').format(number)
   }
 
-const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-800'
@@ -108,11 +113,6 @@ const getPriorityColor = (priority) => {
         return 'bg-surface-100 text-surface-800'
     }
   }
-
-  // Additional state for forms and functionality
-  const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
-  const [newDeal, setNewDeal] = useState({ title: '', value: '', contact: '', stage: 'qualified' })
-  const [searchTerm, setSearchTerm] = useState('')
 
   // Stats for dashboard
   const stats = [
@@ -129,67 +129,6 @@ const getPriorityColor = (priority) => {
     { id: 'negotiation', title: 'Negotiation', color: 'bg-orange-100 text-orange-800' },
     { id: 'closed', title: 'Closed', color: 'bg-green-100 text-green-800' }
   ]
-
-  // Deal form handler
-  const handleDealSubmit = (e) => {
-    e.preventDefault()
-    if (!newDeal.title || !newDeal.value) {
-      toast.error('Title and value are required')
-      return
-    }
-
-    const deal = {
-      id: Date.now(),
-      ...newDeal,
-      value: parseInt(newDeal.value),
-      owner: 'Alex Chen',
-      probability: 75
-    }
-    setDeals([...deals, deal])
-    setNewDeal({ title: '', value: '', contact: '', stage: 'qualified' })
-    toast.success('Deal created successfully!')
-  }
-
-  const moveDeal = (dealId, newStage) => {
-    setDeals(deals.map(deal => 
-      deal.id === dealId ? { ...deal, stage: newStage } : deal
-    ))
-    toast.success('Deal stage updated!')
-  }
-
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.company.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  const renderDashboard = () => (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Welcome Header */}
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-nova-text mb-2">Welcome back, Alex 👋</h1>
-          <p className="text-surface-600">Here's what's happening with your sales today.</p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <span className="text-sm text-surface-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-        </div>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: index * 0.1 }}
-            className="nova-stat-card group"
-          >
-}
 
   // Calendar functions - Fixed event handling and validation
   const navigateCalendar = (direction) => {
@@ -302,7 +241,7 @@ const getPriorityColor = (priority) => {
   }
 
   // Settings functions - Fixed form validation and state management
-const handleSettingsChange = (section, field, value) => {
+  const handleSettingsChange = (section, field, value) => {
     try {
       setSettingsData(prev => ({
         ...prev,
@@ -373,20 +312,162 @@ const handleSettingsChange = (section, field, value) => {
       ))
       toast.success('Contact updated successfully')
     } else {
-      const newContact = {
+      const newContactObj = {
         id: Date.now(),
         ...contactForm,
         status: 'active',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
       }
-      setContacts(prev => [...prev, newContact])
+      setContacts(prev => [...prev, newContactObj])
       toast.success('Contact added successfully')
     }
 
-setContactForm({ name: '', email: '', company: '', phone: '' })
+    setContactForm({ name: '', email: '', company: '', phone: '' })
     setShowContactModal(false)
     setEditingContact(null)
   }
+
+  // Deal form handler
+  const handleDealSubmit = (e) => {
+    e.preventDefault()
+    if (!newDeal.title || !newDeal.value) {
+      toast.error('Title and value are required')
+      return
+    }
+
+    const deal = {
+      id: Date.now(),
+      ...newDeal,
+      value: parseInt(newDeal.value),
+      owner: 'Alex Chen',
+      probability: 75
+    }
+    setDeals([...deals, deal])
+    setNewDeal({ title: '', value: '', contact: '', stage: 'qualified' })
+    toast.success('Deal created successfully!')
+  }
+
+  const moveDeal = (dealId, newStage) => {
+    setDeals(deals.map(deal => 
+      deal.id === dealId ? { ...deal, stage: newStage } : deal
+    ))
+    toast.success('Deal stage updated!')
+  }
+
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.company.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Dashboard render function with stats card implementation
+  const renderDashboard = () => (
+    <div className="space-y-6 sm:space-y-8">
+      {/* Welcome Header */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-nova-text mb-2">Welcome back, Alex 👋</h1>
+          <p className="text-surface-600">Here's what's happening with your sales today.</p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <span className="text-sm text-surface-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: index * 0.1 }}
+            className="nova-stat-card group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-surface-600 text-sm font-medium">{stat.title}</p>
+                <p className="text-2xl font-bold text-nova-text">{stat.value}</p>
+                <p className={`text-sm font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                  {stat.change} from last month
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ApperIcon name={stat.icon} className={`w-6 h-6 text-white`} />
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="nova-card p-6"
+        >
+          <h3 className="text-lg font-semibold text-nova-text mb-4">Recent Activities</h3>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <ApperIcon name="CheckCircle" className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-nova-text">Deal closed with Tech Corp</p>
+                <p className="text-xs text-surface-500">2 hours ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <ApperIcon name="Users" className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-nova-text">3 new contacts added</p>
+                <p className="text-xs text-surface-500">4 hours ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                <ApperIcon name="Calendar" className="w-4 h-4 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-nova-text">Meeting scheduled for tomorrow</p>
+                <p className="text-xs text-surface-500">1 day ago</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="nova-card p-6"
+        >
+          <h3 className="text-lg font-semibold text-nova-text mb-4">Upcoming Tasks</h3>
+          <div className="space-y-4">
+            {tasks.todo.slice(0, 3).map((task) => (
+              <div key={task.id} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-nova-text">{task.title}</p>
+                  <p className="text-xs text-surface-500">Due: {task.dueDate}</p>
+                </div>
+                <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(task.priority)}`}>
+                  {task.priority}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  )
 
   const renderContacts = () => (
     <div className="space-y-6">
@@ -576,7 +657,7 @@ setContactForm({ name: '', email: '', company: '', phone: '' })
     </div>
   )
 
-const renderTasks = () => {
+  const renderTasks = () => {
     const allTasks = [...tasks.todo, ...tasks.inprogress, ...tasks.done]
     
     return (
@@ -609,7 +690,8 @@ const renderTasks = () => {
       </div>
     )
   }
-const renderCalendar = () => {
+
+  const renderCalendar = () => {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -843,720 +925,434 @@ const renderCalendar = () => {
   }
 
   const renderReports = () => {
-    const [reportPeriod, setReportPeriod] = useState('month')
-    const [reportType, setReportType] = useState('overview')
+    // Fixed chart configuration with proper error handling
+    const chartOptions = {
+      chart: {
+        type: 'area',
+        height: 350,
+        toolbar: { show: false },
+        background: 'transparent',
+        fontFamily: 'Inter, ui-sans-serif, system-ui'
+      },
+      dataLabels: { enabled: false },
+      stroke: { curve: 'smooth', width: 3 },
+      xaxis: {
+        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: {
+          style: {
+            colors: '#64748b',
+            fontSize: '12px'
+          }
+        }
+      },
+      yaxis: {
+        labels: {
+          style: {
+            colors: '#64748b',
+            fontSize: '12px'
+          }
+        }
+      },
+      colors: ['#5B9DF9', '#A18CD1'],
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.7,
+          opacityTo: 0.9,
+          stops: [0, 90, 100]
+        }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 4
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontFamily: 'Inter, ui-sans-serif, system-ui'
+      },
+      responsive: [{
+        breakpoint: 768,
+        options: {
+          chart: {
+            height: 300
+          }
+        }
+      }]
+    }
 
-    const reportMetrics = {
-      sales: {
-        total: 305000,
-        growth: 12.5,
-        deals: 23,
-        conversion: 68
+    const chartSeries = [
+      {
+        name: 'Revenue',
+        data: [30000, 40000, 35000, 50000, 49000, 60000]
       },
-      contacts: {
-        total: 1247,
-        new: 156,
-        active: 892,
-        conversion: 15.2
-      },
-      performance: {
-        revenue: 305000,
-        target: 350000,
-        completion: 87.1,
-{/* Event Modal - Fixed form handling and validation */}
-          {showEventModal && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-white rounded-xl p-6 w-full max-w-md"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-nova-text">Add Event</h3>
+      {
+        name: 'Deals',
+        data: [20, 35, 25, 40, 38, 45]
+      }
+    ]
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6"
+      >
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
+          <h1 className="text-2xl font-bold text-nova-text mb-4 lg:mb-0">Reports & Analytics</h1>
+          <div className="flex items-center space-x-4">
+            <select
+              value={reportsPeriod}
+              onChange={(e) => handleReportsPeriodChange(e.target.value)}
+              className="nova-input w-auto"
+              disabled={reportsLoading}
+            >
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+            </select>
+            <button 
+              onClick={() => toast.success('Export functionality coming soon!')}
+              className="nova-button flex items-center space-x-2"
+            >
+              <ApperIcon name="Download" className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+
+        {reportsLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="nova-stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-surface-600 text-sm font-medium">Total Revenue</p>
+                  <p className="text-2xl font-bold text-nova-text">{formatCurrency(reportsData.revenue.current)}</p>
+                  <p className="text-sm text-green-600 font-medium">
+                    +{reportsData.revenue.growth}% from last period
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <ApperIcon name="TrendingUp" className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="nova-stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-surface-600 text-sm font-medium">Total Deals</p>
+                  <p className="text-2xl font-bold text-nova-text">{formatNumber(reportsData.deals.current)}</p>
+                  <p className="text-sm text-green-600 font-medium">
+                    +{reportsData.deals.growth}% from last period
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <ApperIcon name="Target" className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="nova-stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-surface-600 text-sm font-medium">Total Contacts</p>
+                  <p className="text-2xl font-bold text-nova-text">{formatNumber(reportsData.contacts.current)}</p>
+                  <p className="text-sm text-green-600 font-medium">
+                    +{reportsData.contacts.growth}% from last period
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <ApperIcon name="Users" className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="nova-card">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-nova-text mb-4">Revenue & Deals Trend</h3>
+            <div className="chart-container" style={{ minHeight: '350px' }}>
+              <Chart
+                options={chartOptions}
+                series={chartSeries}
+                type="area"
+                height={350}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  const renderSettings = () => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6"
+      >
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
+          <h1 className="text-2xl font-bold text-nova-text mb-4 lg:mb-0">Settings</h1>
+          {settingsChanged && (
+            <button
+              onClick={handleSettingsSave}
+              disabled={settingsLoading}
+              className="nova-button flex items-center space-x-2"
+            >
+              {settingsLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <ApperIcon name="Save" className="w-4 h-4" />
+              )}
+              <span>Save Changes</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profile Settings */}
+          <div className="nova-card">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-nova-text mb-4">Profile Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    value={settingsData.profile.name}
+                    onChange={(e) => handleSettingsChange('profile', 'name', e.target.value)}
+                    className="nova-input"
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Email *</label>
+                  <input
+                    type="email"
+                    value={settingsData.profile.email}
+                    onChange={(e) => handleSettingsChange('profile', 'email', e.target.value)}
+                    className="nova-input"
+                    placeholder="your.email@company.com"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={settingsData.profile.phone}
+                    onChange={(e) => handleSettingsChange('profile', 'phone', e.target.value)}
+                    className="nova-input"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Company</label>
+                  <input
+                    type="text"
+                    value={settingsData.profile.company}
+                    onChange={(e) => handleSettingsChange('profile', 'company', e.target.value)}
+                    className="nova-input"
+                    placeholder="Your company name"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Notification Settings */}
+          <div className="nova-card">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-nova-text mb-4">Notification Preferences</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-nova-text">Email Notifications</p>
+                    <p className="text-sm text-surface-600">Receive notifications via email</p>
+                  </div>
                   <button
-                    onClick={() => {
-                      setShowEventModal(false)
-                      setEventForm({ title: '', date: '', time: '', type: 'meeting', description: '' })
-                    }}
-                    className="p-2 rounded-xl hover:bg-surface-100 transition-colors"
+                    onClick={() => handleSettingsChange('notifications', 'email', !settingsData.notifications.email)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      settingsData.notifications.email ? 'bg-primary' : 'bg-surface-300'
+                    }`}
                   >
-                    <ApperIcon name="X" className="w-5 h-5 text-surface-600" />
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsData.notifications.email ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
                   </button>
                 </div>
 
-                <form onSubmit={handleEventSubmit} className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Title *</label>
-                    <input
-                      type="text"
-                      value={eventForm.title}
-                      onChange={(e) => setEventForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="nova-input"
-                      placeholder="Event title"
-                      required
+                    <p className="font-medium text-nova-text">Push Notifications</p>
+                    <p className="text-sm text-surface-600">Receive push notifications</p>
+                  </div>
+                  <button
+                    onClick={() => handleSettingsChange('notifications', 'push', !settingsData.notifications.push)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      settingsData.notifications.push ? 'bg-primary' : 'bg-surface-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsData.notifications.push ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                     />
-                  </div>
+                  </button>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-nova-text mb-2">Date *</label>
-                      <input
-                        type="date"
-                        value={eventForm.date}
-                        onChange={(e) => setEventForm(prev => ({ ...prev, date: e.target.value }))}
-                        className="nova-input"
-                        min={format(new Date(), 'yyyy-MM-dd')}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-nova-text mb-2">Time *</label>
-                      <input
-                        type="time"
-                        value={eventForm.time}
-                        onChange={(e) => setEventForm(prev => ({ ...prev, time: e.target.value }))}
-                        className="nova-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Type</label>
-                    <select
-                      value={eventForm.type}
-                      onChange={(e) => setEventForm(prev => ({ ...prev, type: e.target.value }))}
-                      className="nova-input"
-                    >
-                      <option value="meeting">Meeting</option>
-                      <option value="call">Call</option>
-                      <option value="deadline">Deadline</option>
-                    </select>
+                    <p className="font-medium text-nova-text">SMS Notifications</p>
+                    <p className="text-sm text-surface-600">Receive notifications via SMS</p>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Description</label>
-                    <textarea
-                      value={eventForm.description}
-                      onChange={(e) => setEventForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="nova-input resize-none"
-                      rows="3"
-                      placeholder="Event description"
+                  <button
+                    onClick={() => handleSettingsChange('notifications', 'sms', !settingsData.notifications.sms)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      settingsData.notifications.sms ? 'bg-primary' : 'bg-surface-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsData.notifications.sms ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                     />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-nova-text">Marketing Emails</p>
+                    <p className="text-sm text-surface-600">Receive marketing and promotional emails</p>
                   </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEventModal(false)
-                        setEventForm({ title: '', date: '', time: '', type: 'meeting', description: '' })
-                      }}
-                      className="px-4 py-2 text-surface-600 hover:bg-surface-100 rounded-xl transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="nova-button"
-                    >
-                      Add Event
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-          )}
-        </motion.div>
-      )
-    }
-                </p>
+                  <button
+                    onClick={() => handleSettingsChange('notifications', 'marketing', !settingsData.notifications.marketing)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      settingsData.notifications.marketing ? 'bg-primary' : 'bg-surface-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsData.notifications.marketing ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
-              <div className="p-3 bg-blue-50 rounded-xl">
-                <ApperIcon name="TrendingUp" className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="nova-card p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-surface-600 text-sm font-medium">Active Contacts</p>
-                <p className="text-2xl font-bold text-nova-text">{reportMetrics.contacts.active}</p>
-                <p className="text-sm text-purple-600 mt-1">
-                  +{reportMetrics.contacts.new} new this period
-                </p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-xl">
-                <ApperIcon name="Users" className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="nova-card p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-surface-600 text-sm font-medium">Target Progress</p>
-                <p className="text-2xl font-bold text-nova-text">{reportMetrics.performance.completion}%</p>
-                <p className="text-sm text-orange-600 mt-1">
-                  ${(reportMetrics.performance.target - reportMetrics.performance.revenue).toLocaleString()} remaining
-                </p>
-              </div>
-              <div className="p-3 bg-orange-50 rounded-xl">
-                <ApperIcon name="Target" className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-const renderReports = () => {
-      // Fixed chart configuration with proper error handling
-      const chartOptions = {
-        chart: {
-          type: 'area',
-          height: 350,
-          toolbar: { show: false },
-          background: 'transparent',
-          fontFamily: 'Inter, ui-sans-serif, system-ui'
-        },
-        dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: 3 },
-        xaxis: {
-          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          labels: {
-            style: {
-              colors: '#64748b',
-              fontSize: '12px'
-            }
-          }
-        },
-        yaxis: {
-          labels: {
-            style: {
-              colors: '#64748b',
-              fontSize: '12px'
-            }
-          }
-        },
-        colors: ['#5B9DF9', '#A18CD1'],
-        fill: {
-          type: 'gradient',
-          gradient: {
-            shadeIntensity: 1,
-            opacityFrom: 0.7,
-            opacityTo: 0.9,
-            stops: [0, 90, 100]
-          }
-        },
-        grid: {
-          borderColor: '#e2e8f0',
-          strokeDashArray: 4
-        },
-        legend: {
-          position: 'top',
-          horizontalAlign: 'right',
-          fontFamily: 'Inter, ui-sans-serif, system-ui'
-        },
-        responsive: [{
-          breakpoint: 768,
-          options: {
-            chart: {
-              height: 300
-            }
-          }
-        }]
-      }
-
-      const chartSeries = [
-        {
-          name: 'Revenue',
-          data: [30000, 40000, 35000, 50000, 49000, 60000]
-        },
-        {
-          name: 'Deals',
-          data: [20, 35, 25, 40, 38, 45]
-        }
-      ]
-
-      return (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6"
-        >
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-            <h1 className="text-2xl font-bold text-nova-text mb-4 lg:mb-0">Reports & Analytics</h1>
-            <div className="flex items-center space-x-4">
-              <select
-                value={reportsPeriod}
-                onChange={(e) => handleReportsPeriodChange(e.target.value)}
-                className="nova-input w-auto"
-                disabled={reportsLoading}
-              >
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-              </select>
-              <button 
-                onClick={() => toast.success('Export functionality coming soon!')}
-                className="nova-button flex items-center space-x-2"
-              >
-                <ApperIcon name="Download" className="w-4 h-4" />
-                <span>Export</span>
-              </button>
             </div>
           </div>
 
-          {reportsLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <div className="nova-stat-card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-surface-600 text-sm font-medium">Total Revenue</p>
-                    <p className="text-2xl font-bold text-nova-text">{formatCurrency(reportsData.revenue.current)}</p>
-                    <p className="text-sm text-green-600 font-medium">
-                      +{reportsData.revenue.growth}% from last period
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <ApperIcon name="TrendingUp" className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="nova-stat-card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-surface-600 text-sm font-medium">Total Deals</p>
-                    <p className="text-2xl font-bold text-nova-text">{formatNumber(reportsData.deals.current)}</p>
-                    <p className="text-sm text-green-600 font-medium">
-                      +{reportsData.deals.growth}% from last period
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <ApperIcon name="Target" className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="nova-stat-card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-surface-600 text-sm font-medium">Total Contacts</p>
-                    <p className="text-2xl font-bold text-nova-text">{formatNumber(reportsData.contacts.current)}</p>
-<p className="text-sm text-green-600 font-medium">
-                      +{reportsData.contacts.growth}% from last period
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <ApperIcon name="Users" className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
+          {/* Privacy Settings */}
           <div className="nova-card">
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-nova-text mb-4">Revenue & Deals Trend</h3>
-              <div className="chart-container" style={{ minHeight: '350px' }}>
-                <Chart
-                  options={chartOptions}
-                  series={chartSeries}
-                  type="area"
-                  height={350}
-                />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )
-    }
-
-    const renderSettings = () => {
-      return (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6"
-        >
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-            <h1 className="text-2xl font-bold text-nova-text mb-4 lg:mb-0">Settings</h1>
-            {settingsChanged && (
-              <button
-                onClick={handleSettingsSave}
-                disabled={settingsLoading}
-                className="nova-button flex items-center space-x-2"
-              >
-                {settingsLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  <ApperIcon name="Save" className="w-4 h-4" />
-                )}
-                <span>Save Changes</span>
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Profile Settings */}
-            <div className="nova-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-nova-text mb-4">Profile Information</h3>
-                <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-nova-text mb-4">Privacy & Security</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Full Name *</label>
-                    <input
-                      type="text"
-                      value={settingsData.profile.name}
-                      onChange={(e) => handleSettingsChange('profile', 'name', e.target.value)}
-                      className="nova-input"
-                      placeholder="Your full name"
-                      required
-/>
+                    <p className="font-medium text-nova-text">Profile Visibility</p>
+                    <p className="text-sm text-surface-600">Who can see your profile information</p>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Email *</label>
-                    <input
-                      type="email"
-                      value={settingsData.profile.email}
-                      onChange={(e) => handleSettingsChange('profile', 'email', e.target.value)}
-                      className="nova-input"
-                      placeholder="your.email@company.com"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Phone</label>
-                    <input
-                      type="tel"
-                      value={settingsData.profile.phone}
-                      onChange={(e) => handleSettingsChange('profile', 'phone', e.target.value)}
-                      className="nova-input"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Company</label>
-                    <input
-                      type="text"
-                      value={settingsData.profile.company}
-                      onChange={(e) => handleSettingsChange('profile', 'company', e.target.value)}
-                      className="nova-input"
-                      placeholder="Your company name"
-                    />
-                  </div>
+                  <select
+                    value={settingsData.privacy.profileVisibility}
+                    onChange={(e) => handleSettingsChange('privacy', 'profileVisibility', e.target.value)}
+                    className="nova-input w-auto"
+                  >
+                    <option value="public">Public</option>
+                    <option value="team">Team Only</option>
+                    <option value="private">Private</option>
+                  </select>
                 </div>
-              </div>
-            </div>
 
-            {/* Notification Settings */}
-            <div className="nova-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-nova-text mb-4">Notification Preferences</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">Email Notifications</p>
-                      <p className="text-sm text-surface-600">Receive notifications via email</p>
-                    </div>
-                    <button
-                      onClick={() => handleSettingsChange('notifications', 'email', !settingsData.notifications.email)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        settingsData.notifications.email ? 'bg-primary' : 'bg-surface-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settingsData.notifications.email ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">Push Notifications</p>
-                      <p className="text-sm text-surface-600">Receive push notifications</p>
-                    </div>
-                    <button
-                      onClick={() => handleSettingsChange('notifications', 'push', !settingsData.notifications.push)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        settingsData.notifications.push ? 'bg-primary' : 'bg-surface-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settingsData.notifications.push ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">SMS Notifications</p>
-                      <p className="text-sm text-surface-600">Receive notifications via SMS</p>
-                    </div>
-                    <button
-                      onClick={() => handleSettingsChange('notifications', 'sms', !settingsData.notifications.sms)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        settingsData.notifications.sms ? 'bg-primary' : 'bg-surface-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settingsData.notifications.sms ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">Marketing Emails</p>
-                      <p className="text-sm text-surface-600">Receive marketing and promotional emails</p>
-                    </div>
-                    <button
-                      onClick={() => handleSettingsChange('notifications', 'marketing', !settingsData.notifications.marketing)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        settingsData.notifications.marketing ? 'bg-primary' : 'bg-surface-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settingsData.notifications.marketing ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy Settings */}
-            <div className="nova-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-nova-text mb-4">Privacy & Security</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">Profile Visibility</p>
-                      <p className="text-sm text-surface-600">Who can see your profile information</p>
-                    </div>
-                    <select
-                      value={settingsData.privacy.profileVisibility}
-                      onChange={(e) => handleSettingsChange('privacy', 'profileVisibility', e.target.value)}
-                      className="nova-input w-auto"
-                    >
-                      <option value="public">Public</option>
-                      <option value="team">Team Only</option>
-                      <option value="private">Private</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-nova-text">Data Sharing</p>
-                      <p className="text-sm text-surface-600">Allow data sharing for analytics</p>
-                    </div>
-                    <button
-                      onClick={() => handleSettingsChange('privacy', 'dataSharing', !settingsData.privacy.dataSharing)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                        settingsData.privacy.dataSharing ? 'bg-primary' : 'bg-surface-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settingsData.privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Preferences */}
-            <div className="nova-card">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-nova-text mb-4">Preferences</h3>
-                <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Language</label>
-                    <select
-                      value={settingsData.preferences.language}
-                      onChange={(e) => handleSettingsChange('preferences', 'language', e.target.value)}
-                      className="nova-input"
-                    >
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
-                      <option value="de">German</option>
-                    </select>
+                    <p className="font-medium text-nova-text">Data Sharing</p>
+                    <p className="text-sm text-surface-600">Allow data sharing for analytics</p>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Timezone</label>
-                    <select
-                      value={settingsData.preferences.timezone}
-                      onChange={(e) => handleSettingsChange('preferences', 'timezone', e.target.value)}
-                      className="nova-input"
-                    >
-                      <option value="UTC-8">Pacific Time (UTC-8)</option>
-                      <option value="UTC-5">Eastern Time (UTC-5)</option>
-                      <option value="UTC+0">Greenwich Mean Time (UTC+0)</option>
-                      <option value="UTC+1">Central European Time (UTC+1)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-nova-text mb-2">Currency</label>
-                    <select
-                      value={settingsData.preferences.currency}
-                      onChange={(e) => handleSettingsChange('preferences', 'currency', e.target.value)}
-                      className="nova-input"
-                    >
-                      <option value="USD">US Dollar ($)</option>
-                      <option value="EUR">Euro (€)</option>
-                      <option value="GBP">British Pound (£)</option>
-                      <option value="CAD">Canadian Dollar (C$)</option>
-                    </select>
-                  </div>
+                  <button
+                    onClick={() => handleSettingsChange('privacy', 'dataSharing', !settingsData.privacy.dataSharing)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                      settingsData.privacy.dataSharing ? 'bg-primary' : 'bg-surface-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settingsData.privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </motion.div>
-      )
-    }
 
-  // Dashboard render function with stats card implementation
-  const renderDashboard = () => (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Welcome Header */}
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-nova-text mb-2">Welcome back, Alex 👋</h1>
-          <p className="text-surface-600">Here's what's happening with your sales today.</p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <span className="text-sm text-surface-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          {/* Preferences */}
+          <div className="nova-card">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-nova-text mb-4">Preferences</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Language</label>
+                  <select
+                    value={settingsData.preferences.language}
+                    onChange={(e) => handleSettingsChange('preferences', 'language', e.target.value)}
+                    className="nova-input"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Timezone</label>
+                  <select
+                    value={settingsData.preferences.timezone}
+                    onChange={(e) => handleSettingsChange('preferences', 'timezone', e.target.value)}
+                    className="nova-input"
+                  >
+                    <option value="UTC-8">Pacific Time (UTC-8)</option>
+                    <option value="UTC-5">Eastern Time (UTC-5)</option>
+                    <option value="UTC+0">Greenwich Mean Time (UTC+0)</option>
+                    <option value="UTC+1">Central European Time (UTC+1)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-nova-text mb-2">Currency</label>
+                  <select
+                    value={settingsData.preferences.currency}
+                    onChange={(e) => handleSettingsChange('preferences', 'currency', e.target.value)}
+                    className="nova-input"
+                  >
+                    <option value="USD">US Dollar ($)</option>
+                    <option value="EUR">Euro (€)</option>
+                    <option value="GBP">British Pound (£)</option>
+                    <option value="CAD">Canadian Dollar (C$)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: index * 0.1 }}
-            className="nova-stat-card group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-surface-600 text-sm font-medium">{stat.title}</p>
-                <p className="text-2xl font-bold text-nova-text">{stat.value}</p>
-                <p className={`text-sm font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                  {stat.change} from last month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ApperIcon name={stat.icon} className={`w-6 h-6 text-white`} />
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="nova-card p-6"
-        >
-          <h3 className="text-lg font-semibold text-nova-text mb-4">Recent Activities</h3>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <ApperIcon name="CheckCircle" className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-nova-text">Deal closed with Tech Corp</p>
-                <p className="text-xs text-surface-500">2 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <ApperIcon name="Users" className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-nova-text">3 new contacts added</p>
-                <p className="text-xs text-surface-500">4 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <ApperIcon name="Calendar" className="w-4 h-4 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-nova-text">Meeting scheduled for tomorrow</p>
-                <p className="text-xs text-surface-500">1 day ago</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="nova-card p-6"
-        >
-          <h3 className="text-lg font-semibold text-nova-text mb-4">Upcoming Tasks</h3>
-          <div className="space-y-4">
-            {tasks.todo.slice(0, 3).map((task) => (
-              <div key={task.id} className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-nova-text">{task.title}</p>
-                  <p className="text-xs text-surface-500">Due: {task.dueDate}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(task.priority)}`}>
-                  {task.priority}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  )
+    )
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -1591,7 +1387,5 @@ const renderReports = () => {
     </div>
   )
 }
-
-export default MainFeature
 
 export default MainFeature
