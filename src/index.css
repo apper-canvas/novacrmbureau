@@ -56,10 +56,6 @@
     text-wrap: balance;
   }
   
-  .hover\:scale-102:hover {
-    transform: scale(1.02);
-  }
-  
   .shadow-glow {
     box-shadow: 0 0 20px rgba(91, 157, 249, 0.3);
   }
