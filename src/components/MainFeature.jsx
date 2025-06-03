@@ -26,10 +26,30 @@ const MainFeature = ({ activeSection }) => {
     { id: 4, title: 'Send contract to Innovation Labs', dueDate: '2024-01-17', priority: 'low', status: 'completed' },
   ])
 
-  const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
+const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
   const [newDeal, setNewDeal] = useState({ title: '', value: '', contact: '', stage: 'new' })
   const [searchTerm, setSearchTerm] = useState('')
-
+  const [activeTab, setActiveTab] = useState('profile')
+  const [profile, setProfile] = useState({
+    name: 'Alex Chen',
+    email: 'alex.chen@company.com',
+    phone: '+1 (555) 123-4567',
+    company: 'Sales Pro Inc.',
+    role: 'Sales Manager'
+  })
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: true,
+    deals: true,
+    tasks: true,
+    reports: false
+  })
+  const [preferences, setPreferences] = useState({
+    theme: 'light',
+    language: 'en',
+    timezone: 'PST',
+    currency: 'USD'
+  })
   const stages = [
     { id: 'new', title: 'New', color: 'bg-blue-100 text-blue-800' },
     { id: 'contacted', title: 'Contacted', color: 'bg-yellow-100 text-yellow-800' },
@@ -438,13 +458,13 @@ const MainFeature = ({ activeSection }) => {
               }`}>
                 {task.status}
               </span>
-              <ApperIcon name="Clock" className="w-4 h-4 text-surface-400" />
+<ApperIcon name="Clock" className="w-4 h-4 text-surface-400" />
+              </div>
             </div>
           </motion.div>
-))}
+        ))}
       </div>
     </div>
-  )
 
   const renderCalendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date())
@@ -959,29 +979,7 @@ const MainFeature = ({ activeSection }) => {
     )
   }
 
-  const renderSettings = () => {
-    const [activeTab, setActiveTab] = useState('profile')
-    const [profile, setProfile] = useState({
-      name: 'Alex Chen',
-      email: 'alex@novacrm.com',
-      phone: '+1 (555) 123-4567',
-      company: 'Nova CRM',
-      role: 'Sales Manager'
-    })
-    const [notifications, setNotifications] = useState({
-      email: true,
-      push: true,
-      deals: true,
-      tasks: true,
-      reports: false
-    })
-    const [preferences, setPreferences] = useState({
-      theme: 'light',
-      language: 'en',
-      timezone: 'PST',
-      currency: 'USD'
-    })
-
+const renderSettings = () => {
     const settingsTabs = [
       { id: 'profile', label: 'Profile', icon: 'User' },
       { id: 'notifications', label: 'Notifications', icon: 'Bell' },
@@ -1300,9 +1298,9 @@ const MainFeature = ({ activeSection }) => {
         return renderContacts()
       case 'deals':
         return renderDeals()
-      case 'tasks':
+case 'tasks':
         return renderTasks()
-case 'calendar':
+      case 'calendar':
         return renderCalendar()
       case 'reports':
         return renderReports()
