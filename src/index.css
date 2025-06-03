@@ -3,10 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  
   body {
     @apply bg-nova-gray text-nova-text;
     font-family: 'Inter', sans-serif;
