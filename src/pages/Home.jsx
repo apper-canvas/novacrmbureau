@@ -2,10 +2,41 @@ import { useState } from 'react'
 import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
 import { motion } from 'framer-motion'
+import { toast } from 'react-toastify'
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('dashboard')
+  const [userDrawerOpen, setUserDrawerOpen] = useState(false)
+
+  const handleProfileEdit = () => {
+    // Profile edit functionality
+    toast.success('Profile updated successfully!')
+    setUserDrawerOpen(false)
+  }
+
+  const handlePreferences = () => {
+    // Preferences functionality
+    toast.info('Preferences saved!')
+  }
+
+  const handleNotificationToggle = (enabled) => {
+    // Notification toggle functionality
+    toast.success(`Notifications ${enabled ? 'enabled' : 'disabled'}`)
+  }
+
+  const handleThemeToggle = (isDark) => {
+    // Theme toggle functionality
+    toast.info(`Switched to ${isDark ? 'dark' : 'light'} theme`)
+  }
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      toast.success('Logged out successfully!')
+      // Logout logic here
+    }
+    setUserDrawerOpen(false)
+  }
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
@@ -58,16 +89,130 @@ const Home = () => {
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
           </button>
           
-          <div className="flex items-center space-x-2 cursor-pointer hover:bg-surface-100 rounded-xl p-2 transition-colors">
+<div 
+            className="flex items-center space-x-2 cursor-pointer hover:bg-surface-100 rounded-xl p-2 transition-colors relative"
+            onClick={() => setUserDrawerOpen(!userDrawerOpen)}
+          >
             <img
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format"
               alt="User Avatar"
               className="w-8 h-8 rounded-lg object-cover"
             />
             <span className="hidden sm:block font-medium text-nova-text">Alex Chen</span>
-            <ApperIcon name="ChevronDown" className="w-4 h-4 text-surface-400" />
+            <ApperIcon name="ChevronDown" className={`w-4 h-4 text-surface-400 transition-transform ${userDrawerOpen ? 'rotate-180' : ''}`} />
           </div>
         </div>
+
+        {/* User Drawer */}
+        {userDrawerOpen && (
+          <>
+            <div 
+              className="fixed inset-0 z-40 bg-black/20"
+              onClick={() => setUserDrawerOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, x: 20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-16 right-4 w-80 bg-white rounded-xl shadow-nova border border-surface-100 z-50 overflow-hidden"
+            >
+              {/* User Profile Section */}
+              <div className="p-6 bg-nova-gradient text-white">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face&auto=format"
+                    alt="User Avatar"
+                    className="w-14 h-14 rounded-xl object-cover border-2 border-white/20"
+                  />
+                  <div>
+                    <h3 className="font-semibold text-lg">Alex Chen</h3>
+                    <p className="text-white/80 text-sm">alex.chen@novacrm.com</p>
+                    <p className="text-white/60 text-xs">Senior Sales Manager</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="p-4 border-b border-surface-100">
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={handleProfileEdit}
+                    className="flex items-center space-x-2 p-3 rounded-xl hover:bg-surface-50 transition-colors text-left"
+                  >
+                    <ApperIcon name="User" className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-medium">Edit Profile</span>
+                  </button>
+                  <button 
+                    onClick={handlePreferences}
+                    className="flex items-center space-x-2 p-3 rounded-xl hover:bg-surface-50 transition-colors text-left"
+                  >
+                    <ApperIcon name="Settings" className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-medium">Preferences</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Settings */}
+              <div className="p-4 border-b border-surface-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <ApperIcon name="Bell" className="w-5 h-5 text-surface-600" />
+                    <span className="text-sm font-medium">Notifications</span>
+                  </div>
+                  <button 
+                    onClick={() => handleNotificationToggle(true)}
+                    className="w-10 h-6 bg-primary rounded-full relative transition-colors"
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-transform"></div>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <ApperIcon name="Moon" className="w-5 h-5 text-surface-600" />
+                    <span className="text-sm font-medium">Dark Mode</span>
+                  </div>
+                  <button 
+                    onClick={() => handleThemeToggle(false)}
+                    className="w-10 h-6 bg-surface-300 rounded-full relative transition-colors"
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform"></div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="p-4 border-b border-surface-100">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-xl font-bold text-primary">24</div>
+                    <div className="text-xs text-surface-600">Active Deals</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-secondary">156</div>
+                    <div className="text-xs text-surface-600">Contacts</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-accent">8</div>
+                    <div className="text-xs text-surface-600">Tasks Today</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logout */}
+              <div className="p-4">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center space-x-2 p-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors"
+                >
+                  <ApperIcon name="LogOut" className="w-5 h-5" />
+                  <span className="font-medium">Logout</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
       </motion.nav>
 
       <div className="flex">
