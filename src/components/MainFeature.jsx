@@ -82,11 +82,27 @@ const MainFeature = ({ activeSection }) => {
     preferences: { language: 'en', timezone: 'UTC-8', dateFormat: 'MM/DD/YYYY', currency: 'USD' }
   })
   const [settingsChanged, setSettingsChanged] = useState(false)
+const [settingsChanged, setSettingsChanged] = useState(false)
 
   // Additional state for forms and functionality
   const [newContact, setNewContact] = useState({ name: '', email: '', company: '', phone: '' })
   const [newDeal, setNewDeal] = useState({ title: '', value: '', contact: '', stage: 'qualified' })
-  const [searchTerm, setSearchTerm] = useState('')
+  
+  // Companies state
+  const [companies, setCompanies] = useState([
+    { id: 1, name: 'Tech Corp', industry: 'Technology', employees: 500, revenue: 50000000, location: 'San Francisco, CA', status: 'Active', contact: 'Sarah Wilson', email: 'sarah@techcorp.com', phone: '+1 (555) 123-4567', website: 'https://techcorp.com', founded: 2010, description: 'Leading technology solutions provider' },
+    { id: 2, name: 'Design Studio', industry: 'Design', employees: 50, revenue: 5000000, location: 'New York, NY', status: 'Active', contact: 'Michael Chen', email: 'michael@designstudio.com', phone: '+1 (555) 234-5678', website: 'https://designstudio.com', founded: 2015, description: 'Creative design and branding agency' },
+    { id: 3, name: 'StartupXYZ', industry: 'Technology', employees: 25, revenue: 2000000, location: 'Austin, TX', status: 'Prospect', contact: 'John Smith', email: 'john@startupxyz.com', phone: '+1 (555) 345-6789', website: 'https://startupxyz.com', founded: 2020, description: 'Innovative startup in the tech space' }
+  ])
+  const [companiesSearch, setCompaniesSearch] = useState('')
+  const [showAddCompanyModal, setShowAddCompanyModal] = useState(false)
+  const [showEditCompanyModal, setShowEditCompanyModal] = useState(false)
+  const [showCompanyDetails, setShowCompanyDetails] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [companyForm, setCompanyForm] = useState({
+    name: '', industry: '', employees: '', revenue: '', location: '', status: 'Prospect',
+    contact: '', email: '', phone: '', website: '', founded: '', description: ''
+  })
 
   // Helper functions
   const formatCurrency = (amount) => {
@@ -328,23 +344,36 @@ const MainFeature = ({ activeSection }) => {
   }
 
   // Deal form handler
-  const handleDealSubmit = (e) => {
+const handleDealSubmit = (e) => {
     e.preventDefault()
-    if (!newDeal.title || !newDeal.value) {
+    
+    if (!dealForm.title || !dealForm.value) {
       toast.error('Title and value are required')
       return
     }
 
-    const deal = {
-      id: Date.now(),
-      ...newDeal,
-      value: parseInt(newDeal.value),
-      owner: 'Alex Chen',
-      probability: 75
+    if (editingDeal) {
+      setDeals(prev => prev.map(deal => 
+        deal.id === editingDeal.id 
+          ? { ...deal, ...dealForm, value: parseInt(dealForm.value) }
+          : deal
+      ))
+      toast.success('Deal updated successfully')
+    } else {
+      const deal = {
+        id: Date.now(),
+        ...dealForm,
+        value: parseInt(dealForm.value),
+        company: dealForm.contact || 'Unknown',
+        probability: dealForm.probability || 75
+      }
+      setDeals([...deals, deal])
+      toast.success('Deal created successfully!')
     }
-    setDeals([...deals, deal])
-    setNewDeal({ title: '', value: '', contact: '', stage: 'qualified' })
-    toast.success('Deal created successfully!')
+
+    setDealForm({ title: '', company: '', value: '', stage: 'qualified', probability: 50, contact: '' })
+    setShowDealModal(false)
+    setEditingDeal(null)
   }
 
   const moveDeal = (dealId, newStage) => {
@@ -354,11 +383,126 @@ const MainFeature = ({ activeSection }) => {
     toast.success('Deal stage updated!')
   }
 
-  const filteredContacts = contacts.filter(contact =>
+const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.company.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Filtered companies for search
+  const filteredCompanies = companies.filter(company =>
+    company.name.toLowerCase().includes(companiesSearch.toLowerCase()) ||
+    company.industry.toLowerCase().includes(companiesSearch.toLowerCase()) ||
+    company.location.toLowerCase().includes(companiesSearch.toLowerCase())
+  )
+
+  // Company handlers
+  const handleAddCompany = () => {
+    try {
+      if (!companyForm.name || !companyForm.industry || !companyForm.contact || !companyForm.email) {
+        toast.error('Please fill in all required fields')
+        return
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(companyForm.email)) {
+        toast.error('Please enter a valid email address')
+        return
+      }
+
+      const newCompany = {
+        id: Date.now(),
+        ...companyForm,
+        employees: parseInt(companyForm.employees) || 0,
+        revenue: parseInt(companyForm.revenue) || 0,
+        founded: parseInt(companyForm.founded) || new Date().getFullYear()
+      }
+
+      setCompanies(prev => [...prev, newCompany])
+      setCompanyForm({
+        name: '', industry: '', employees: '', revenue: '', location: '', status: 'Prospect',
+        contact: '', email: '', phone: '', website: '', founded: '', description: ''
+      })
+      setShowAddCompanyModal(false)
+      toast.success('Company added successfully')
+    } catch (error) {
+      toast.error('Error adding company')
+      console.error('Company addition error:', error)
+    }
+  }
+
+  const handleEditCompany = () => {
+    try {
+      if (!companyForm.name || !companyForm.industry || !companyForm.contact || !companyForm.email) {
+        toast.error('Please fill in all required fields')
+        return
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(companyForm.email)) {
+        toast.error('Please enter a valid email address')
+        return
+      }
+
+      const updatedCompany = {
+        ...selectedCompany,
+        ...companyForm,
+        employees: parseInt(companyForm.employees) || 0,
+        revenue: parseInt(companyForm.revenue) || 0,
+        founded: parseInt(companyForm.founded) || new Date().getFullYear()
+      }
+
+      setCompanies(prev => prev.map(company => 
+        company.id === selectedCompany.id ? updatedCompany : company
+      ))
+      setShowEditCompanyModal(false)
+      setShowCompanyDetails(false)
+      setSelectedCompany(null)
+      toast.success('Company updated successfully')
+    } catch (error) {
+      toast.error('Error updating company')
+      console.error('Company update error:', error)
+    }
+  }
+
+  const handleDeleteCompany = (company) => {
+    try {
+      if (window.confirm(`Are you sure you want to delete ${company.name}?`)) {
+        setCompanies(prev => prev.filter(c => c.id !== company.id))
+        setShowCompanyDetails(false)
+        setSelectedCompany(null)
+        toast.success('Company deleted successfully')
+      }
+    } catch (error) {
+      toast.error('Error deleting company')
+      console.error('Company deletion error:', error)
+    }
+  }
+
+  const openCompanyDetails = (company) => {
+    setSelectedCompany(company)
+    setShowCompanyDetails(true)
+  }
+
+  const openEditCompanyModal = (company) => {
+    setSelectedCompany(company)
+    setCompanyForm({
+      name: company.name,
+      industry: company.industry,
+      employees: company.employees.toString(),
+      revenue: company.revenue.toString(),
+      location: company.location,
+      status: company.status,
+      contact: company.contact,
+      email: company.email,
+      phone: company.phone,
+      website: company.website,
+      founded: company.founded.toString(),
+      description: company.description
+    })
+    setShowEditCompanyModal(true)
+    setShowCompanyDetails(false)
+  }
 
   // Dashboard render function with stats card implementation
   const renderDashboard = () => (
@@ -509,32 +653,32 @@ const MainFeature = ({ activeSection }) => {
           <form onSubmit={handleContactSubmit} className="space-y-4">
             <input
               type="text"
-              placeholder="Full Name *"
-              value={newContact.name}
-              onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+placeholder="Full Name *"
+              value={contactForm.name}
+              onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
               className="nova-input"
               required
             />
             <input
               type="email"
-              placeholder="Email Address *"
-              value={newContact.email}
-              onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+placeholder="Email Address *"
+              value={contactForm.email}
+              onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
               className="nova-input"
               required
             />
             <input
               type="text"
-              placeholder="Company"
-              value={newContact.company}
-              onChange={(e) => setNewContact({...newContact, company: e.target.value})}
+placeholder="Company"
+              value={contactForm.company}
+              onChange={(e) => setContactForm({...contactForm, company: e.target.value})}
               className="nova-input"
             />
             <input
               type="tel"
-              placeholder="Phone Number"
-              value={newContact.phone}
-              onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+placeholder="Phone Number"
+              value={contactForm.phone}
+              onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
               className="nova-input"
             />
             <button type="submit" className="nova-button w-full">
@@ -603,30 +747,30 @@ const MainFeature = ({ activeSection }) => {
           <form onSubmit={handleDealSubmit} className="space-y-4">
             <input
               type="text"
-              placeholder="Deal Title *"
-              value={newDeal.title}
-              onChange={(e) => setNewDeal({...newDeal, title: e.target.value})}
+placeholder="Deal Title *"
+              value={dealForm.title}
+              onChange={(e) => setDealForm({...dealForm, title: e.target.value})}
               className="nova-input"
               required
             />
             <input
               type="number"
-              placeholder="Deal Value *"
-              value={newDeal.value}
-              onChange={(e) => setNewDeal({...newDeal, value: e.target.value})}
+placeholder="Deal Value *"
+              value={dealForm.value}
+              onChange={(e) => setDealForm({...dealForm, value: e.target.value})}
               className="nova-input"
               required
             />
             <input
               type="text"
-              placeholder="Contact Name"
-              value={newDeal.contact}
-              onChange={(e) => setNewDeal({...newDeal, contact: e.target.value})}
+placeholder="Contact Name"
+              value={dealForm.contact}
+              onChange={(e) => setDealForm({...dealForm, contact: e.target.value})}
               className="nova-input"
             />
             <select
-              value={newDeal.stage}
-              onChange={(e) => setNewDeal({...newDeal, stage: e.target.value})}
+value={dealForm.stage}
+              onChange={(e) => setDealForm({...dealForm, stage: e.target.value})}
               className="nova-input"
             >
               {stages.map((stage) => (
@@ -642,6 +786,8 @@ const MainFeature = ({ activeSection }) => {
 
         {/* Deals List */}
         <div className="lg:col-span-2">
+{/* Deals List */}
+        <div className="lg:col-span-2">
           <div className="grid grid-cols-1 gap-4">
             {deals.map((deal) => (
               <motion.div
@@ -650,18 +796,19 @@ const MainFeature = ({ activeSection }) => {
                 className="nova-card p-6 hover:scale-102 transition-all duration-300"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-semibold text-nova-text text-lg">{deal.title}</h3>
-                    <p className="text-surface-600">Contact: {deal.contact}</p>
-                    <p className="text-surface-500 text-sm">Owner: {deal.owner}</p>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-nova-text mb-2">{deal.title}</h3>
+                    <p className="text-surface-600 text-sm mb-2">{deal.company}</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(deal.value)}</p>
+                    <p className="text-sm text-surface-600">Contact: {deal.contact}</p>
                   </div>
-                  <div className="flex flex-col sm:items-end mt-4 sm:mt-0">
-                    <span className="text-2xl font-bold text-green-600 mb-2">${deal.value.toLocaleString()}</span>
+                  <div className="mt-4 sm:mt-0 flex items-center space-x-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      stages.find(s => s.id === deal.stage)?.color
+                      stages.find(s => s.id === deal.stage)?.color || 'bg-gray-100 text-gray-800'
                     }`}>
-                      {stages.find(s => s.id === deal.stage)?.title}
+                      {stages.find(s => s.id === deal.stage)?.title || deal.stage}
                     </span>
+                    <span className="text-sm text-surface-600">{deal.probability}%</span>
                   </div>
                 </div>
               </motion.div>
@@ -671,6 +818,654 @@ const MainFeature = ({ activeSection }) => {
       </div>
     </div>
   )
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-nova-text">Companies</h1>
+            <p className="text-surface-600 mt-1">Manage your company relationships</p>
+          </div>
+          <button
+            onClick={() => setShowAddCompanyModal(true)}
+            className="nova-button flex items-center space-x-2"
+          >
+            <ApperIcon name="Plus" className="w-5 h-5" />
+            <span>Add Company</span>
+          </button>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="nova-card p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+                <input
+                  type="text"
+                  placeholder="Search companies..."
+                  value={companiesSearch}
+                  onChange={(e) => setCompaniesSearch(e.target.value)}
+                  className="nova-input pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <select className="nova-input">
+                <option value="">All Industries</option>
+                <option value="technology">Technology</option>
+                <option value="finance">Finance</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="retail">Retail</option>
+                <option value="energy">Energy</option>
+              </select>
+              <select className="nova-input">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="prospect">Prospect</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Companies Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCompanies.map((company) => (
+            <motion.div
+              key={company.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="nova-card p-6 hover:shadow-nova transition-all duration-300"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-nova-gradient rounded-xl flex items-center justify-center">
+                    <ApperIcon name="Building2" className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-nova-text">{company.name}</h3>
+                    <p className="text-sm text-surface-600">{company.industry}</p>
+                  </div>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    company.status === 'Active'
+                      ? 'bg-green-100 text-green-700'
+                      : company.status === 'Prospect'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {company.status}
+                </span>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center space-x-2 text-sm text-surface-600">
+                  <ApperIcon name="MapPin" className="w-4 h-4" />
+                  <span>{company.location}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-surface-600">
+                  <ApperIcon name="Users" className="w-4 h-4" />
+                  <span>{company.employees} employees</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-surface-600">
+                  <ApperIcon name="User" className="w-4 h-4" />
+                  <span>{company.contact}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-surface-600">
+                  <ApperIcon name="DollarSign" className="w-4 h-4" />
+                  <span>${(company.revenue / 1000000).toFixed(1)}M revenue</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-surface-100">
+                <button
+                  onClick={() => openCompanyDetails(company)}
+                  className="text-primary hover:text-primary-dark font-medium text-sm transition-colors"
+                >
+                  View Details
+                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => openEditCompanyModal(company)}
+                    className="p-2 rounded-lg hover:bg-surface-100 transition-colors"
+                  >
+                    <ApperIcon name="Edit" className="w-4 h-4 text-surface-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCompany(company)}
+                    className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    <ApperIcon name="Trash2" className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {filteredCompanies.length === 0 && (
+          <div className="nova-card p-12 text-center">
+            <ApperIcon name="Building2" className="w-16 h-16 text-surface-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-surface-600 mb-2">No companies found</h3>
+            <p className="text-surface-500 mb-4">Try adjusting your search criteria or add a new company.</p>
+            <button
+              onClick={() => setShowAddCompanyModal(true)}
+              className="nova-button"
+            >
+              Add First Company
+            </button>
+          </div>
+        )}
+
+        {/* Add Company Modal */}
+        {showAddCompanyModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl shadow-nova max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6 border-b border-surface-100">
+                <h2 className="text-2xl font-bold text-nova-text">Add New Company</h2>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Company Name *</label>
+                    <input
+                      type="text"
+                      value={companyForm.name}
+                      onChange={(e) => setCompanyForm({...companyForm, name: e.target.value})}
+                      className="nova-input"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Industry *</label>
+                    <select
+                      value={companyForm.industry}
+                      onChange={(e) => setCompanyForm({...companyForm, industry: e.target.value})}
+                      className="nova-input"
+                    >
+                      <option value="">Select industry</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Retail">Retail</option>
+                      <option value="Energy">Energy</option>
+                      <option value="Manufacturing">Manufacturing</option>
+                      <option value="Education">Education</option>
+                      <option value="Real Estate">Real Estate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Employees</label>
+                    <input
+                      type="number"
+                      value={companyForm.employees}
+                      onChange={(e) => setCompanyForm({...companyForm, employees: e.target.value})}
+                      className="nova-input"
+                      placeholder="Number of employees"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Annual Revenue</label>
+                    <input
+                      type="number"
+                      value={companyForm.revenue}
+                      onChange={(e) => setCompanyForm({...companyForm, revenue: e.target.value})}
+                      className="nova-input"
+                      placeholder="Annual revenue in USD"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
+                    <input
+                      type="text"
+                      value={companyForm.location}
+                      onChange={(e) => setCompanyForm({...companyForm, location: e.target.value})}
+                      className="nova-input"
+                      placeholder="City, State/Country"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+                    <select
+                      value={companyForm.status}
+                      onChange={(e) => setCompanyForm({...companyForm, status: e.target.value})}
+                      className="nova-input"
+                    >
+                      <option value="Prospect">Prospect</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Primary Contact *</label>
+                    <input
+                      type="text"
+                      value={companyForm.contact}
+                      onChange={(e) => setCompanyForm({...companyForm, contact: e.target.value})}
+                      className="nova-input"
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Email *</label>
+                    <input
+                      type="email"
+                      value={companyForm.email}
+                      onChange={(e) => setCompanyForm({...companyForm, email: e.target.value})}
+                      className="nova-input"
+                      placeholder="contact@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={companyForm.phone}
+                      onChange={(e) => setCompanyForm({...companyForm, phone: e.target.value})}
+                      className="nova-input"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Website</label>
+                    <input
+                      type="url"
+                      value={companyForm.website}
+                      onChange={(e) => setCompanyForm({...companyForm, website: e.target.value})}
+                      className="nova-input"
+                      placeholder="https://company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Founded Year</label>
+                    <input
+                      type="number"
+                      value={companyForm.founded}
+                      onChange={(e) => setCompanyForm({...companyForm, founded: e.target.value})}
+                      className="nova-input"
+                      placeholder="2020"
+                      min="1800"
+                      max={new Date().getFullYear()}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+                  <textarea
+                    value={companyForm.description}
+                    onChange={(e) => setCompanyForm({...companyForm, description: e.target.value})}
+                    className="nova-input"
+                    rows="3"
+                    placeholder="Brief description of the company..."
+                  />
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-surface-100 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowAddCompanyModal(false)}
+                  className="nova-button-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddCompany}
+                  className="nova-button"
+                >
+                  Add Company
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Edit Company Modal */}
+        {showEditCompanyModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl shadow-nova max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6 border-b border-surface-100">
+                <h2 className="text-2xl font-bold text-nova-text">Edit Company</h2>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Company Name *</label>
+                    <input
+                      type="text"
+                      value={companyForm.name}
+                      onChange={(e) => setCompanyForm({...companyForm, name: e.target.value})}
+                      className="nova-input"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Industry *</label>
+                    <select
+                      value={companyForm.industry}
+                      onChange={(e) => setCompanyForm({...companyForm, industry: e.target.value})}
+                      className="nova-input"
+                    >
+                      <option value="">Select industry</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Retail">Retail</option>
+                      <option value="Energy">Energy</option>
+                      <option value="Manufacturing">Manufacturing</option>
+                      <option value="Education">Education</option>
+                      <option value="Real Estate">Real Estate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Employees</label>
+                    <input
+                      type="number"
+                      value={companyForm.employees}
+                      onChange={(e) => setCompanyForm({...companyForm, employees: e.target.value})}
+                      className="nova-input"
+                      placeholder="Number of employees"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Annual Revenue</label>
+                    <input
+                      type="number"
+                      value={companyForm.revenue}
+                      onChange={(e) => setCompanyForm({...companyForm, revenue: e.target.value})}
+                      className="nova-input"
+                      placeholder="Annual revenue in USD"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
+                    <input
+                      type="text"
+                      value={companyForm.location}
+                      onChange={(e) => setCompanyForm({...companyForm, location: e.target.value})}
+                      className="nova-input"
+                      placeholder="City, State/Country"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
+                    <select
+                      value={companyForm.status}
+                      onChange={(e) => setCompanyForm({...companyForm, status: e.target.value})}
+                      className="nova-input"
+                    >
+                      <option value="Prospect">Prospect</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Primary Contact *</label>
+                    <input
+                      type="text"
+                      value={companyForm.contact}
+                      onChange={(e) => setCompanyForm({...companyForm, contact: e.target.value})}
+                      className="nova-input"
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Email *</label>
+                    <input
+                      type="email"
+                      value={companyForm.email}
+                      onChange={(e) => setCompanyForm({...companyForm, email: e.target.value})}
+                      className="nova-input"
+                      placeholder="contact@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={companyForm.phone}
+                      onChange={(e) => setCompanyForm({...companyForm, phone: e.target.value})}
+                      className="nova-input"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Website</label>
+                    <input
+                      type="url"
+                      value={companyForm.website}
+                      onChange={(e) => setCompanyForm({...companyForm, website: e.target.value})}
+                      className="nova-input"
+                      placeholder="https://company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-2">Founded Year</label>
+                    <input
+                      type="number"
+                      value={companyForm.founded}
+                      onChange={(e) => setCompanyForm({...companyForm, founded: e.target.value})}
+                      className="nova-input"
+                      placeholder="2020"
+                      min="1800"
+                      max={new Date().getFullYear()}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
+                  <textarea
+                    value={companyForm.description}
+                    onChange={(e) => setCompanyForm({...companyForm, description: e.target.value})}
+                    className="nova-input"
+                    rows="3"
+                    placeholder="Brief description of the company..."
+                  />
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-surface-100 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowEditCompanyModal(false)}
+                  className="nova-button-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditCompany}
+                  className="nova-button"
+                >
+                  Update Company
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Company Details Modal */}
+        {showCompanyDetails && selectedCompany && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl shadow-nova max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6 border-b border-surface-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-nova-gradient rounded-xl flex items-center justify-center">
+                      <ApperIcon name="Building2" className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-nova-text">{selectedCompany.name}</h2>
+                      <p className="text-surface-600">{selectedCompany.industry}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedCompany.status === 'Active'
+                        ? 'bg-green-100 text-green-700'
+                        : selectedCompany.status === 'Prospect'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {selectedCompany.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  <div className="nova-card p-4">
+                    <div className="flex items-center space-x-3">
+                      <ApperIcon name="Users" className="w-8 h-8 text-primary" />
+                      <div>
+                        <p className="text-2xl font-bold text-nova-text">{selectedCompany.employees}</p>
+                        <p className="text-sm text-surface-600">Employees</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="nova-card p-4">
+                    <div className="flex items-center space-x-3">
+                      <ApperIcon name="DollarSign" className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="text-2xl font-bold text-nova-text">${(selectedCompany.revenue / 1000000).toFixed(1)}M</p>
+                        <p className="text-sm text-surface-600">Annual Revenue</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="nova-card p-4">
+                    <div className="flex items-center space-x-3">
+                      <ApperIcon name="Calendar" className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <p className="text-2xl font-bold text-nova-text">{selectedCompany.founded}</p>
+                        <p className="text-sm text-surface-600">Founded</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-nova-text mb-4">Company Information</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="MapPin" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Location</p>
+                          <p className="text-surface-600">{selectedCompany.location}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="Globe" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Website</p>
+                          <a 
+                            href={selectedCompany.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary-dark"
+                          >
+                            {selectedCompany.website}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="FileText" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Description</p>
+                          <p className="text-surface-600">{selectedCompany.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-nova-text mb-4">Contact Information</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="User" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Primary Contact</p>
+                          <p className="text-surface-600">{selectedCompany.contact}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="Mail" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Email</p>
+                          <a 
+                            href={`mailto:${selectedCompany.email}`}
+                            className="text-primary hover:text-primary-dark"
+                          >
+                            {selectedCompany.email}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ApperIcon name="Phone" className="w-5 h-5 text-surface-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-nova-text">Phone</p>
+                          <a 
+                            href={`tel:${selectedCompany.phone}`}
+                            className="text-primary hover:text-primary-dark"
+                          >
+                            {selectedCompany.phone}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-surface-100 flex justify-between">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => openEditCompanyModal(selectedCompany)}
+                    className="nova-button flex items-center space-x-2"
+                  >
+                    <ApperIcon name="Edit" className="w-4 h-4" />
+                    <span>Edit Company</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCompany(selectedCompany)}
+                    className="nova-button-secondary text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                  >
+                    <ApperIcon name="Trash2" className="w-4 h-4" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowCompanyDetails(false)}
+                  className="nova-button-secondary"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
 
   const renderTasks = () => {
     const allTasks = [...tasks.todo, ...tasks.inprogress, ...tasks.done]
@@ -1369,10 +2164,12 @@ const MainFeature = ({ activeSection }) => {
     )
   }
 
-  const renderContent = () => {
+const renderContent = () => {
     switch (activeSection) {
       case 'contacts':
         return renderContacts()
+      case 'companies':
+        return renderCompanies()
       case 'deals':
         return renderDeals()
       case 'tasks':

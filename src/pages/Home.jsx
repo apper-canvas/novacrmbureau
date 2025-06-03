@@ -38,9 +38,10 @@ const Home = () => {
     setUserDrawerOpen(false)
   }
 
-  const sidebarItems = [
+const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { id: 'contacts', label: 'Contacts', icon: 'Users' },
+    { id: 'companies', label: 'Companies', icon: 'Building2' },
     { id: 'deals', label: 'Deals', icon: 'TrendingUp' },
     { id: 'tasks', label: 'Tasks', icon: 'CheckSquare' },
     { id: 'calendar', label: 'Calendar', icon: 'Calendar' },
